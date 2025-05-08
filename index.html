@@ -1,0 +1,116 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Fine della Scuola - Timer Completo</title>
+  <style>
+    body { font-family: Arial; text-align: center; padding: 20px; }
+    h1 { font-size: 2em; }
+    .section { margin-top: 30px; }
+    .timer { font-size: 1.5em; color: #444; }
+  </style>
+</head>
+<body>
+  <h1>⏳ Quanto manca alla fine della scuola?</h1>
+  <div class="section">
+    <div class="timer" id="countdown"></div>
+    <div class="timer" id="totalHours"></div>
+    <div class="timer" id="weekendsLeft"></div>
+    <div class="timer" id="currentHour"></div>
+    <div class="timer" id="subjectHours"></div>
+  </div>
+
+  <script>
+    const endDate = new Date("June 7, 2025 13:45:00").getTime();
+    const today = new Date();
+    const startTime = new Date();
+    const endTime = new Date();
+
+    startTime.setHours(8, 0, 0);
+    endTime.setHours(13, 45, 0);
+
+    const subjectsPerDay = [
+      ["Italiano", "Italiano", "St. Arte", "Inglese", "Fisica", "Filosofia"],
+      ["Sc. Umane", "Sc. Umane", "Sc. Motorie", "Sc. Motorie", "Storia", "Sc. Naturali"],
+      ["Matematica", "Italiano", "Filosofia", "Sc. Umane", "IRC", "Latino"],
+      ["St. Arte", "Fisica", "Inglese", "Italiano", "Storia", "Sc. Umane"],
+      ["Matematica", "Sc. Umane", "Latino", "Sc. Naturali", "Filosofia", "Inglese"]
+    ];
+
+    const subjectNames = {};
+
+    function initSubjects() {
+      for (let row of subjectsPerDay) {
+        for (let subj of row) {
+          if (!subjectNames[subj]) subjectNames[subj] = 0;
+          subjectNames[subj]++;
+        }
+      }
+    }
+
+    function updateCountdown() {
+      const now = new Date().getTime();
+      const distance = endDate - now;
+
+      if (distance <= 0) {
+        document.getElementById("countdown").innerHTML = "La scuola è finita! 🎉";
+        return;
+      }
+
+      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+      document.getElementById("countdown").innerHTML =
+        `Mancano ${days} giorni, ${hours} ore, ${minutes} minuti e ${seconds} secondi alla fine della scuola.`;
+
+      // Ore totali
+      const schoolDaysLeft = Math.floor(days / 7) * 5 + (days % 7 >= 1 ? Math.min(5, days % 7) : 0);
+      const totalHoursLeft = schoolDaysLeft * 6;
+      document.getElementById("totalHours").innerHTML = `📚 Ore totali restanti: ${totalHoursLeft}`;
+
+      // Weekend
+      const weekends = Math.floor(days / 7);
+      document.getElementById("weekendsLeft").innerHTML = `🎉 Weekend rimasti: ${weekends}`;
+
+      // Ora attuale e tempo rimanente
+      const today = new Date();
+      const hour = today.getHours();
+      const minute = today.getMinutes();
+      const currentDay = today.getDay(); // lun=1, dom=0
+
+      if (currentDay >= 1 && currentDay <= 5 && hour >= 8 && hour < 14) {
+        const schoolStart = new Date(today);
+        schoolStart.setHours(8, 0, 0);
+        const minutesSinceStart = Math.floor((now - schoolStart.getTime()) / (1000 * 60));
+        const lessonNumber = Math.floor(minutesSinceStart / 45);
+        const lessonProgress = minutesSinceStart % 45;
+        if (lessonNumber < 6) {
+          const remainingMin = 45 - lessonProgress;
+          const subject = subjectsPerDay[currentDay - 1][lessonNumber];
+          document.getElementById("currentHour").innerHTML = `🕒 Ora in corso: ${subject} (${remainingMin} min alla fine dell'ora)`;
+        } else {
+          document.getElementById("currentHour").innerHTML = `🏁 Le lezioni di oggi sono finite!`;
+        }
+      } else {
+        document.getElementById("currentHour").innerHTML = `⏱️ Non sei in orario scolastico.`;
+      }
+    }
+
+    function showSubjectTotals() {
+      let html = "<br><b>📖 Ore rimanenti per materia:</b><br>";
+      for (const [name, count] of Object.entries(subjectNames)) {
+        const hours = count * 7 - (new Date() > endDate ? count * 7 : 0);
+        html += `${name}: ${count * 7}h<br>`;
+      }
+      document.getElementById("subjectHours").innerHTML = html;
+    }
+
+    initSubjects();
+    updateCountdown();
+    showSubjectTotals();
+    setInterval(updateCountdown, 1000);
+  </script>
+</body>
+</html>
