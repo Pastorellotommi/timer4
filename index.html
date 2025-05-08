@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Tracker Orario Scolastico</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        h2 { color: #2c3e50; }
+        .box, .calendar { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #aaa; padding: 8px; text-align: center; }
+        .highlight { background-color: #f0f8ff; }
+    </style>
+</head>
+<body>
+    <h1>Gestione Orario Scolastico</h1>
+
+    <div class="box">
+        <h2>Ora attuale</h2>
+        <p id="current-time"></p>
+        <p id="current-hour"></p>
+        <p id="minutes-left"></p>
+    </div>
+
+    <div class="box">
+        <h2>Ore scolastiche rimanenti fino al 6 giugno (esclusi weekend)</h2>
+        <p id="remaining-hours"></p>
+        <p id="weekends-list"></p>
+    </div>
+
+    <div class="box">
+        <h2>Ore rimanenti per materia</h2>
+        <div id="subject-hours"></div>
+    </div>
+
+    <div class="box">
+        <h2>Aggiungi impegno</h2>
+        <input type="date" id="task-date">
+        <input type="text" id="task-text" placeholder="Descrizione impegno">
+        <button onclick="addTask()">Aggiungi</button>
+    </div>
+
+    <div class="calendar">
+        <h2>Calendario impegni</h2>
+        <ul id="task-list"></ul>
+    </div>
+
+<script>
+const schoolSchedule = [
+    ["Italiano", "Italiano", "St. Arte", "Inglese", "Fisica", "Filosofia"],
+    ["Sc. Umane", "Sc. Umane", "Sc. Motorie", "Sc. Motorie", "Storia", "Sc. Naturali"],
+    ["Matematica", "Italiano", "Filosofia", "Sc. Umane", "IRC", "Latino"],
+    ["St. Arte", "Fisica", "Inglese", "Italiano", "Storia", "Sc. Umane"],
+    ["Matematica", "Sc. Umane", "Latino", "Sc. Naturali", "Filosofia", "Inglese"]
+];
+
+const weekDays = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì"];
+const periods = [
+    ["08:00", "09:00"], ["09:00", "09:55"], ["09:55", "10:50"],
+    ["11:00", "11:55"], ["11:55", "12:50"], ["12:50", "13:45"]
+];
+
+const endDate = new Date("2025-06-06");
+
+function updateClock() {
+    const now = new Date();
+    document.getElementById("current-time").innerText = "Ora: " + now.toLocaleTimeString();
+    
+    let currentHour = "Fuori orario scolastico";
+    let minutesLeft = "";
+    for (let i = 0; i < periods.length; i++) {
+        const [start, end] = periods[i];
+        const [sh, sm] = start.split(":").map(Number);
+        const [eh, em] = end.split(":").map(Number);
+        const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), sh, sm);
+        const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), eh, em);
+        if (now >= startTime && now <= endTime) {
+            currentHour = `${i + 1}ª ora`;
+            minutesLeft = Math.floor((endTime - now) / 60000) + " minuti rimanenti";
+        }
+    }
+    document.getElementById("current-hour").innerText = "Ora scolastica: " + currentHour;
+    document.getElementById("minutes-left").innerText = minutesLeft;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function calculateRemainingHours() {
+    let date = new Date();
+    let totalHours = 0;
+    let weekends = [];
+
+    while (date <= endDate) {
+        const day = date.getDay();
+        if (day >= 1 && day <= 5) totalHours += 6;
+        else weekends.push(date.toISOString().split("T")[0]);
+        date.setDate(date.getDate() + 1);
+    }
+
+    document.getElementById("remaining-hours").innerText = "Ore totali rimanenti: " + totalHours;
+    document.getElementById("weekends-list").innerText = "Weekend (esclusi): " + weekends.join(", ");
+}
+calculateRemainingHours();
+
+function calculateSubjectHours() {
+    const subjectCount = {};
+    for (let day of schoolSchedule) {
+        for (let subject of day) {
+            subjectCount[subject] = (subjectCount[subject] || 0) + 1;
+        }
+    }
+
+    const today = new Date();
+    const dayCount = Math.floor((endDate - today) / (1000 * 60 * 60 * 24));
+    const schoolDays = Array.from({length: dayCount}, (_, i) => {
+        const d = new Date();
+        d.setDate(today.getDate() + i);
+        return d;
+    }).filter(d => d.getDay() >= 1 && d.getDay() <= 5).length;
+
+    let result = "";
+    for (let subject in subjectCount) {
+        const weekly = subjectCount[subject];
+        const remaining = Math.floor((weekly / 5) * schoolDays);
+        result += `<p><b>${subject}</b>: ${remaining} ore rimanenti</p>`;
+    }
+    document.getElementById("subject-hours").innerHTML = result;
+}
+calculateSubjectHours();
+
+function addTask() {
+    const date = document.getElementById("task-date").value;
+    const text = document.getElementById("task-text").value;
+    if (!date || !text) return alert("Compila entrambi i campi.");
+    const item = document.createElement("li");
+    item.textContent = `${date}: ${text}`;
+    document.getElementById("task-list").appendChild(item);
+    document.getElementById("task-date").value = "";
+    document.getElementById("task-text").value = "";
+}
+</script>
+</body>
+</html>
